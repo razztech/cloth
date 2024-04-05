@@ -1,0 +1,437 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <style>
+    body {
+      background-color: #404040;
+      background-color: white;
+      padding: 100px;
+      width: 1000px;
+      margin: auto;
+      text-align: left;
+      font-weight: 300;
+      font-family: 'Open Sans', sans-serif;
+      color: #121212;
+      /* cursor: url(https://rsha256.github.io/teapot-clear32.png), default!important;
+      cursor: url(https://rsha256.github.io/teapot-clear32.png), pointer!important; */
+      cursor: url(https://rsha256.github.io/dragon-clear32.png), default!important;
+      cursor: url(https://rsha256.github.io/dragon-clear32.png), pointer!important;
+      /* cursor: url(https://rsha256.github.io/cloth-clear-32.png), default!important;
+      cursor: url(https://rsha256.github.io/cloth-clear-32.png), pointer!important; */
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+    kbd {
+      color: #121212;
+    }
+    blockquote {
+      color: #888;
+      border: 2px solid #333;
+      padding: 10px;
+      background-color: #ccc;
+    }
+
+    table.custom-tbl {
+      border: 1px solid;
+    }
+
+    table.custom-tbl th {
+      border: 1px solid;
+      background-color: rgb(99, 209, 209);
+    }
+
+    table.custom-tbl td {
+      border: 1px solid;
+      background-color: #f1e686a8;
+    }
+  </style>
+
+  <title>CS 184 Mesh Editor</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <!-- Not using below due to lacking bold fontfaces -->
+  <!-- <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro|Source+Sans+Pro:400,700" rel="stylesheet"> -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono|Roboto+Slab|Roboto:300,400,500,700" rel="stylesheet" />
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+  </script>  
+</head>
+
+<body>
+
+  <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+  <h1 align="middle">Project 4: Cloth Simulator</h1>
+  <h2 align="middle">Razvan Cristian Turcu, CS184-raz-cloth</h2>
+
+  <br><br>
+
+  <div>
+    <h2 align="middle">Overview</h2>
+    <p>
+      I implemented a simulator to visualize the mechanics and physical properties of a cloth in relationship with the environment. 
+      Fundamentally, the project uses physics concepts, more specifically mechanics, to simulate the properties and dynamics of the cloth. 
+      A significant aspect of the project was designing the collision detection with objects in the environment and also making self-collisions look realistic. <br/><br/>
+
+      
+      Another part of this project involved enhancing the visual realism of the cloth by applying various textures and effects. To achieve this without incurring the high computational 
+      costs typically associated with ray tracing, I utilized GLSL shaders. These shaders enabled the implementation of advanced visual effects, such as bump mapping and Blinn-Phong shading, to further increase the realism of the simulation. Bump mapping was particularly 
+      crucial in giving the cloth an illusion of depth and texture at a pixel level without altering its geometry, thus adding a layer of complexity to its appearance with minimal performance impact.
+      <br/><br/>
+      I was surprised of how fast the simulation actually was even when I used complex materials for the cloth. Another interesting aspect of the project was modifying the physical parameters of the environment (such as the cloth's density or the spring constant) and observing the effects on the simulation.
+      laying with the physical parameters of the environment such as the cloth's density or the spring constant 
+    </p>
+  </div>
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-1">
+  <h2 align="middle">Part 1: Masses and springs</h2>
+  </a>
+  <div>
+    <p>
+      In this part, I initialized the cloth, which is designed as a grid of masses connected by springs. The structural and shearing springs are the resistance of the cloth's structure, enabling it to maintain its form and resist deformations under various forces and interactions with the environment.
+      Bending springs are introduced to span masses that are two points apart, further enhancing the simulation's realism by modeling the resistance of the cloth to bending. 
+      This allows us to simulate complex folding patterns and the natural draping behavior of fabrics.
+  </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/t1-zoomed-in_p2.png" align="middle" width="300vw" />
+          </td>
+          <td>
+            <img src="images/t1-init_p2.png" align="middle" width="300vw" />
+            <figcaption>Initial configuration ($\text{ks} = 5,000$)</figcaption>
+          </td>
+          <td>
+            <img src="images/t1-zoomed-out_p2.png" align="middle" width="300vw" />
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/no-shearing.png" align="middle" width="80%" />
+            <figcaption>No shearing constraints</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="images/shearing.png" align="middle" width="80%" />
+            <figcaption>Only shearing constraints</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="images/all-constraints.png" align="middle" width="80%" />
+            <figcaption>All constraints</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-2">
+  <h2 align="middle">Part 2: Simulation via numerical integration</h2>
+  </a>
+    <p>
+      In this part of the project, I implemented the forces acting on the point masses. I started by implementing the external force by multiplying the mass with 
+      the acceleration vectors of each force according to the formula F = m * a. <br/><br/>
+      
+      Next, I calculated the foces caused by the springs connected between point masses. For each spring, I calculated the extension/compression from the rest length. I also
+      calculated a force vector based on Hooke's law, where the force magnitude is proportional to the extension or compression, and its direction is along the line 
+      connecting the two point masses. I then applied this force to both point masses connected by the spring, according Newton's third law to make sure that action and reaction are equal and opposite. <br/><br/>
+
+      I computed the new positions of the point masses using Verlet integration to simulate the cloth dynamics since it is suited for energy conservation in complex dynamics of objects such as the ones 
+      imposed by a cloth. I then used the method proposed by Provot in 1995 to prevent excessive stretching and to further increase the realism of the cloth. <br/><br/>
+
+      <b>Spring Constant</b> <br/>
+      Very low ks means that the springs are very weak resulting in the cloth being significantly stretched. Moreover the cloth takes longer to settle 
+      to a resting state because the springs are not strong enough to pull the cloth together. A high ks means that the spring are stiff resulting in the cloth being more
+      resistant to stretching. The cloth is tighter and more rigid. 
+      <div align="middle">
+        <table style="width:100%">
+          <tr align="center">
+            <td>
+              <img src="images/2-lowks-1.png" align="middle" width="400vw" />
+            </td>
+            <td>
+              <img src="images/2-highks-1.png" align="middle" width="400vw" />
+            </td>
+            <td>
+          </tr>
+          <tr align="center">
+            <td>
+              <img src="images/2-lowks-2.png" align="middle" width="400vw" />
+              <figcaption>Low ks</figcaption>
+            </td>
+            <td>
+              <img src="images/2-highks-2.png" align="middle" width="400vw" />
+              <figcaption>High ks</figcaption>
+            </td>
+            <td>
+          </tr>
+        </table>
+      </div>
+      <br/><br/>
+      <b>Density</b><br/>
+      Density affects the point masses. This can help us visualize Newton's Second Law in effect because the force  is proportional to the mass of the cloth. 
+      Thus, higher density means a heavier cloth and more force applied. For lower density, the opposite is true.
+      <div align="middle">
+        <table style="width:100%">
+          <tr align="center">
+            <td>
+              <img src="images/2-lowd-1.png" align="middle" width="400vw" />
+            </td>
+            <td>
+              <img src="images/2-highd-1.png" align="middle" width="400vw" />
+            </td>
+            <td>
+          </tr>
+          <tr align="center">
+            <td>
+              <img src="images/2-lowd-2.png" align="middle" width="400vw" />
+              <figcaption>Low density</figcaption>
+            </td>
+            <td>
+              <img src="images/2-highd-2.png" align="middle" width="400vw" />
+              <figcaption>High density</figcaption>
+            </td>
+            <td>
+          </tr>
+        </table>
+      </div>
+      <br/><br/>
+      <b>Damping</b><br/>
+      Damping is related to how fast energy is dissipated from the cloth. Low dampling leads to the cloth moving a lot before coming to rest, while higher dampling leads to a rapid loss of energy
+      and, therefore, the cloth coming to rest much faster. 
+      <div align="middle">
+        <table style="width:100%">
+          <tr align="center">
+            <td>
+              <img src="images/2-lowdamp-1.png" align="middle" width="400vw" />
+            </td>
+            <td>
+              <img src="images/2-highdamp-1.png" align="middle" width="400vw" />
+            </td>
+            <td>
+          </tr>
+          <tr align="center">
+            <td>
+              <img src="images/2-lowdamp-2.png" align="middle" width="400vw" />
+              <figcaption>Low damping</figcaption>
+            </td>
+            <td>
+              <img src="images/2-highdamp-2.png" align="middle" width="400vw" />
+              <figcaption>High damping</figcaption>
+            </td>
+            <td>
+          </tr>
+        </table>
+      </div>
+    </p>
+
+
+    <div align="middle">
+      <img src="images/resting.png" align="middle" width="100%" />
+      <figcaption>Final Resting State</figcaption>
+    </div>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-3">
+  <h2 align="middle">Part 3: Handling collisions with other objects</h2>
+  </a>
+    <blockquote><b>
+      Show us screenshots of your shaded cloth from <i>scene/sphere.json</i> in its final resting state 
+      on the sphere using the default <code>ks = 5000</code> as well as with <code>ks = 500</code> and <code>ks = 50000</code>. 
+    </b></blockquote>
+    <p>
+      I implemented collisions with both spheres and planes by identifying the intersection of the cloth with the boundary of the objects. As you can see below,
+      the procedure detects if a point mass has penetrated the sphere and computes a response to move the point mass outside the sphere in order to show a realistic 
+      depiction of the cloth covering the sphere. For the plane, the goal is to detect if a point mass has collided with the plane during the last time step and to adjust its position accordingly to simulate a collision response. <br/><br/>
+      The difference in the sphere collisions comes from the fact that ks is directly linked to how stiff the springs are. Very low ks (500N/m) means that the springs are very weak resulting in the cloth covering the sphere tighter. Moreover the cloth takes longer to settle 
+      to a resting state on the sphere. A high ks (50,000N/m) means that the spring are stiff resulting in the cloth being more
+      resistant to stretching and covering the ball looser.
+    </p>
+    
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/2-500.png" align="middle" width="300vw" />
+            <figcaption>$\text{ks} = 500$</figcaption>
+          </td>
+          <td>
+            <img src="images/2-5000.png" align="middle" width="300vw" />
+            <figcaption>Initial configuration ($\text{ks} = 5,000$)</figcaption>
+          </td>
+          <td>
+            <img src="images/2-50000.png" align="middle" width="300vw" />
+            <figcaption>$\text{ks} = 50,000$</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <img src="images/3-plane.png" align="middle" width="100%" />
+      <figcaption>Intersection with plane</figcaption>
+    </div>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-4">
+  <h2 align="middle">Part 4: Handling self-collisions</h2>
+  </a>
+
+    <p>
+      Because the cloth is represented as a grid of point masses connected by springs, we checked for collisions between these points. 
+      I used a spatial hashing technique to efficiently manage and query the positions of the point masses. Each point mass was 
+      assigned to a spatial hash bucket based on its position in space. This approach significantly reduced the number of necessary 
+      comparisons by only checking for collisions between point masses that were close enough to each other, within the same or 
+      neighboring hash buckets. Once a potential self-collision was detected, I calculated an appropriate response to prevent the cloth 
+      from intersecting itself. I did this by adjusting the positions of the colliding point masses so that they no longer overlapped. 
+    </p>
+    
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/t4-collision-1.png" align="middle" width="300vw" />
+            <figcaption>Start</figcaption>
+          </td>
+          <td>
+            <img src="images/t4-collision-2.png" align="middle" width="300vw" />
+            <figcaption>Initial Collision</figcaption>
+          </td>
+          <td>
+            <img src="images/t4-collision-3.png" align="middle" width="300vw" />
+            <figcaption>Restful State</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      At lower density, the visual detail of the cloth's behavior is simplified. Folds and creases are less defined because there are fewer point masses.
+      On the other hand, higher density means that each interaction is amplified due to more point masses present in the structure of the cloth. There is a sweetspot 
+      of density that needs to be found in order to create a realistic cloth. <br/><br/>
+      In terms of ks, the lower it is more elastic the cloth becomes, therefore, leading to unrealistic renderings of the self-collision. The higher ks leads to a stiffer cloth that 
+      when it self-collides it tries to keep its initial structure. Therefore, we can see in the images below that at lower ks the cloth modifies its shape, while at higher ks it tries to perserve the initial shape. 
+
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+              <img src="images/t4-density-1.png" align="middle" width="400px" />
+              <figcaption>$\text{density} = 1$</figcaption>
+              
+          </td>
+          <td>
+              <img src="images/t4-density-2.png" align="middle" width="400px" />
+              <figcaption>$\text{density} = 50$</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+              <img src="images/t4-ks-1.png" align="middle" width="400px" />
+              <figcaption>$\text{ks} = 1,000$</figcaption>
+          </td>
+          <td>
+              <img src="images/t4-ks-2.png" align="middle" width="400px" />
+              <figcaption>$\text{ks} = 7,500$</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      TODO
+    </p>
+
+
+
+  <a href="https://cs184.eecs.berkeley.edu/sp23/docs/proj4-part-5">
+  <h2 align="middle">Part 5: Cloth Sim</h2>
+  </a>
+
+    <p>
+      A shader program determines the way in which vertices and pixels are processed to produce visual effects. We use this to perform faster computation on the GPU that is 
+      required for complex graphics procedures. In the computational pipeline, vertex shaders come first and they operate on each vertex of the 3D space transforming each vertex from the model space into screen space. 
+      Next, the fragment shaders act on fragments determining the final color and texture of each pixel.
+    </p>
+
+    <p>
+      The <b>Blinn-Phong shading model</b> uses three components of light interaction: ambient, diffuse, and specular reflections. Ambient reflection is the uniform lighting in the environment. Diffuse 
+      reflection represents the light scattered in many directions when it hits rough surfaces. And specular reflection captures the highlights on shiny surfaces. 
+      Blinn-Phong produces realistic lighting effects with low-computational overhead. 
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+              <img src="images/t5-blinn-phong-ambient.png" align="middle" width="400px" />
+              <figcaption>Ambient component only</figcaption>
+              
+          </td>
+          <td>
+              <img src="images/t5-blinn-phong-diffuse.png" align="middle" width="400px" />
+              <figcaption>Diffuse component only</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+              <img src="images/t5-blinn-phong-specular.png" align="middle" width="400px" />
+              <figcaption>Specular component only</figcaption>
+          </td>
+          <td>
+              <img src="images/t5-blinn-phong-all.png" align="middle" width="400px" />
+              <figcaption>Complete Blinn-Phong model</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <br/>
+
+    <div align="middle">
+      <img src="images/t5-custom-texture.png" align="middle" width="100%" />
+      <figcaption>Texture mapping</figcaption>
+    </div>
+
+    <br/>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="images/t5-mirror-shader-cloth.png" align="middle" width="400vw" />
+            <figcaption>Mirror Shader on the Cloth</figcaption>
+          </td>
+          <td>
+            <img src="images/t5-mirror-shader-sphere.png" align="middle" width="400vw" />
+            <figcaption>Mirror Shader on the Sphere</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+</body>
+</html>
